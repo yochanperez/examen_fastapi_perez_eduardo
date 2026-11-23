@@ -22,6 +22,41 @@ def obtener_sala(codigo: str) -> dict:
 SalaDep = Annotated[dict, Depends(obtener_sala)]
 
 
+@router.get("/aforo-jornada", status_code=status.HTTP_200_OK)
+def calcular_aforo_jornada(
+    funciones: Annotated[int, Query(ge=1, le=12)],
+    piso: Annotated[int | None, Query(ge=1, le=5)] = None,
+):
+    seleccion = [s for s in SALAS if piso is None or s["piso"] == piso]
+
+    if not seleccion:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hay salas registradas para los criterios seleccionados",
+        )
+
+    cantidad_salas = len(seleccion)
+    suma_butacas = 0
+    suma_vendible_por_funcion = 0
+    cantidad_3d = 0
+
+    for sala in seleccion:
+        butacas = sala["butacas"]
+        suma_butacas += butacas
+        suma_vendible_por_funcion += int(butacas * 0.90)
+        if sala["es_3d"]:
+            cantidad_3d += 1
+
+    return {
+        "salas": cantidad_salas,
+        "funciones": funciones,
+        "butacas_promedio": round(suma_butacas / cantidad_salas, 2),
+        "aforo_total": suma_butacas * funciones,
+        "aforo_vendible": suma_vendible_por_funcion * funciones,
+        "porcentaje_3d": round((cantidad_3d / cantidad_salas) * 100, 1),
+    }
+
+
 @router.get("", response_model=list[SalaSalida], status_code=status.HTTP_200_OK)
 def listar_sala(
     piso: Annotated[int | None, Query(ge=1, le=5)] = None,
