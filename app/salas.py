@@ -3,21 +3,27 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.datos import SALAS
-from app.esquemas import Sala, SalaActualizar, SalaCrear
+from app.esquemas import SalaActualizar, SalaCrear, SalaSalida
 
-router = APIRouter(prefix="/salas", tags=["salas"])
+router = APIRouter(prefix="/salas", tags=["Salas de Cine"])
+
 
 def obtener_sala(codigo: str) -> dict:
+    codigo = codigo.upper()
     for s in SALAS:
-        if s["codigo"] == codigo.upper():
+        if s["codigo"] == codigo:
             return s
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"No existe la Sala '{codigo}'",
     )
 
-@router.get("", response_model=list[Sala])
-def listar_Salas(
+
+SalaDep = Annotated[dict, Depends(obtener_sala)]
+
+
+@router.get("", response_model=list[SalaSalida], status_code=status.HTTP_200_OK)
+def listar_sala(
     piso: Annotated[int | None, Query(ge=1, le=5)] = None,
     es_3d: bool = False,
 ) -> list[dict]:
@@ -28,28 +34,32 @@ def listar_Salas(
         resultado = [s for s in resultado if s["es_3d"]]
     return resultado
 
-@router.post("", response_model=Sala, status_code=status.HTTP_201_CREATED)
-def crear_sala(nueva: SalaCrear) -> dict:
-    if any(s["codigo"] == nueva.codigo for s in SALAS):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"La Sala '{nueva.codigo}' ya existe",
-        )
-    SALAS.append(nueva.model_dump())
-    return SALAS[-1]
+
+@router.post("", response_model=SalaSalida, status_code=status.HTTP_201_CREATED)
+def crear_sala(nueva: SalaCrear):
+    for s in SALAS:
+        if s["codigo"] == nueva.codigo:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"La Sala '{nueva.codigo}' ya existe",
+            )
+    registro = nueva.model_dump()
+    SALAS.append(registro)
+    return registro
 
 
-@router.get("/{codigo}", response_model=Sala)
-def ver_sala(sala: MateriaEncontrada) -> dict:
+@router.get("/{codigo}", response_model=SalaSalida)
+def obtener_sala(sala: SalaDep):
     return sala
 
 
-@router.put("/{codigo}", response_model=Materia)
-def actualizar_materia(cambios: MateriaActualizar, materia: MateriaEncontrada) -> dict:
-    materia.update(cambios.model_dump(exclude_unset=True))
-    return materia
+@router.patch("/{codigo}", response_model=SalaSalida, status_code=status.HTTP_200_OK)
+def actualizar_sala(sala: SalaDep, datos: SalaActualizar):
+    cambios = datos.model_dump(exclude_unset=True)
+    sala.update(cambios)
+    return sala
 
 
 @router.delete("/{codigo}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_materia(materia: MateriaEncontrada) -> None:
-    MATERIAS.remove(materia)
+def eliminar_sala(sala: SalaDep):
+    SALAS.remove(sala)

@@ -6,4 +6,4 @@ app.include_router(salas_router)
 
 @app.get("/")
 def raiz() -> dict:
-    return {"api": "materias", "docs": "/docs"}
+    return {"api": "Salas de Cine", "docs": "/docs"}
