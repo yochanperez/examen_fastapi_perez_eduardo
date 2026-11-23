@@ -61,7 +61,7 @@ def calcular_aforo_jornada(
 def reporte_mantenimiento(
     en_mantenimiento: Annotated[
         list[str] | None,
-        Query(description="Códigos de salas fuera de servicio (repetible)"),
+        Query(),
     ] = None,
 ):
     if not SALAS:
