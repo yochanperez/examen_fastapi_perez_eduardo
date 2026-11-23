@@ -27,3 +27,29 @@ def listar_Salas(
     if es_3d:
         resultado = [s for s in resultado if s["es_3d"]]
     return resultado
+
+@router.post("", response_model=Sala, status_code=status.HTTP_201_CREATED)
+def crear_sala(nueva: SalaCrear) -> dict:
+    if any(s["codigo"] == nueva.codigo for s in SALAS):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"La Sala '{nueva.codigo}' ya existe",
+        )
+    SALAS.append(nueva.model_dump())
+    return SALAS[-1]
+
+
+@router.get("/{codigo}", response_model=Sala)
+def ver_sala(sala: MateriaEncontrada) -> dict:
+    return sala
+
+
+@router.put("/{codigo}", response_model=Materia)
+def actualizar_materia(cambios: MateriaActualizar, materia: MateriaEncontrada) -> dict:
+    materia.update(cambios.model_dump(exclude_unset=True))
+    return materia
+
+
+@router.delete("/{codigo}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_materia(materia: MateriaEncontrada) -> None:
+    MATERIAS.remove(materia)
