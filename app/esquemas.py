@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field
 
 
 class SalaCrear(BaseModel):
-    codigo: str = Field(pattern=r"^[A-Z]{3}\d{3}$", examples=["SAL401"])
-    nombre: str = Field(min_length=3, max_length=60, examples=["Sala VIP"])
+    codigo: str = Field(pattern=r"^[A-Z]{3}\d{3}$")
+    nombre: str = Field(min_length=3, max_length=60)
     butacas: int = Field(ge=20, le=500, examples=[150])
     piso: int = Field(ge=1, le=5, examples=[4])
     es_3d: bool = Field(default=False)
