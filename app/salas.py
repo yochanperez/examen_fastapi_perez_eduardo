@@ -8,7 +8,7 @@ from app.esquemas import SalaActualizar, SalaCrear, SalaSalida
 router = APIRouter(prefix="/salas", tags=["Salas de Cine"])
 
 
-def obtener_sala(codigo: str) -> dict:
+def buscar_sala_por_codigo(codigo: str) -> dict:
     codigo = codigo.upper()
     for s in SALAS:
         if s["codigo"] == codigo:
@@ -19,7 +19,7 @@ def obtener_sala(codigo: str) -> dict:
     )
 
 
-SalaDep = Annotated[dict, Depends(obtener_sala)]
+SalaDep = Annotated[dict, Depends(buscar_sala_por_codigo)]
 
 
 @router.get("/aforo-jornada", status_code=status.HTTP_200_OK)
@@ -55,6 +55,7 @@ def calcular_aforo_jornada(
         "aforo_vendible": suma_vendible_por_funcion * funciones,
         "porcentaje_3d": round((cantidad_3d / cantidad_salas) * 100, 1),
     }
+
 
 @router.get("/estado-mantenimiento", status_code=status.HTTP_200_OK)
 def reporte_mantenimiento(
@@ -100,7 +101,7 @@ def reporte_mantenimiento(
 
 
 @router.get("", response_model=list[SalaSalida], status_code=status.HTTP_200_OK)
-def listar_sala(
+def listar_salas(
     piso: Annotated[int | None, Query(ge=1, le=5)] = None,
     es_3d: bool = False,
 ) -> list[dict]:
@@ -125,7 +126,7 @@ def crear_sala(nueva: SalaCrear):
     return registro
 
 
-@router.get("/{codigo}", response_model=SalaSalida)
+@router.get("/{codigo}", response_model=SalaSalida, status_code=status.HTTP_200_OK)
 def obtener_sala(sala: SalaDep):
     return sala
 
