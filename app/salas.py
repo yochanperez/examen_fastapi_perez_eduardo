@@ -56,6 +56,48 @@ def calcular_aforo_jornada(
         "porcentaje_3d": round((cantidad_3d / cantidad_salas) * 100, 1),
     }
 
+@router.get("/estado-mantenimiento", status_code=status.HTTP_200_OK)
+def reporte_mantenimiento(
+    en_mantenimiento: Annotated[
+        list[str] | None,
+        Query(description="Códigos de salas fuera de servicio (repetible)"),
+    ] = None,
+):
+    if not SALAS:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No existen salas registradas en el sistema",
+        )
+
+    codigos_mantenimiento = {cod.upper() for cod in en_mantenimiento} if en_mantenimiento else set()
+
+    total = 0
+    conteo_mantenimiento = 0
+    operativas = 0
+    aforo_operativo = 0
+    max_butacas = -1
+    sala_operativa_mayor: str | None = None
+
+    for sala in SALAS:
+        total += 1
+        if sala["codigo"] in codigos_mantenimiento:
+            conteo_mantenimiento += 1
+        else:
+            operativas += 1
+            aforo_operativo += sala["butacas"]
+            if sala["butacas"] > max_butacas:
+                max_butacas = sala["butacas"]
+                sala_operativa_mayor = sala["codigo"]
+
+    return {
+        "total": total,
+        "en_mantenimiento": conteo_mantenimiento,
+        "operativas": operativas,
+        "porcentaje_fuera_de_servicio": round((conteo_mantenimiento / total) * 100, 1),
+        "aforo_operativo": aforo_operativo,
+        "sala_operativa_mayor": sala_operativa_mayor,
+    }
+
 
 @router.get("", response_model=list[SalaSalida], status_code=status.HTTP_200_OK)
 def listar_sala(
